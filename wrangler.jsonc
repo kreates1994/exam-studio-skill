@@ -1,0 +1,14 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "exam-studio-premium-test",
+	"main": "src/index.js",
+	"compatibility_date": "2026-07-08",
+	"workers_dev": true,
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "exam-studio-test",
+			"database_id": "f7956de1-4b63-4044-9e30-720c13e62667"
+		}
+	]
+}

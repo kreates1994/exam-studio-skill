@@ -1,0 +1,148 @@
+openapi: 3.0.3
+info:
+  title: EXAM/STUDIO Test API
+  version: 0.1.0
+  description: Read-only exam quiz, grading, and Premium sandbox gate backed by Cloudflare D1. The premium_test mode is a simulation only.
+servers:
+  - url: https://exam-studio-premium-test.kreates15.workers.dev
+paths:
+  /health:
+    get:
+      operationId: healthCheck
+      summary: Check the Worker and D1 connection
+      responses:
+        '200':
+          description: Service and database status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  service: { type: string }
+                  database: { type: string }
+  /api/plans:
+    get:
+      operationId: getPlans
+      summary: Get Free and Premium plan details
+      responses:
+        '200':
+          description: Plan features, price, and sandbox checkout URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  plans:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        name: { type: string }
+                        priceMinor: { type: integer }
+                        currency: { type: string }
+                        features:
+                          type: array
+                          items: { type: string }
+                        checkoutUrl: { type: string, nullable: true }
+                  paymentVerification: { type: string }
+  /api/question:
+    get:
+      operationId: getQuestion
+      summary: Fetch a sample question without its answer
+      parameters:
+        - in: query
+          name: id
+          required: false
+          schema: { type: string, default: ce-statics-beam-001 }
+      responses:
+        '200':
+          description: Question and four answer choices
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  question:
+                    type: object
+                    properties:
+                      id: { type: string }
+                      subject: { type: string }
+                      topic: { type: string }
+                      difficulty: { type: string }
+                      prompt: { type: string }
+                      choices:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key: { type: string }
+                            text: { type: string }
+  /api/grade:
+    post:
+      operationId: gradeAnswer
+      summary: Grade an answer using the D1 question record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [questionId, answer]
+              properties:
+                questionId: { type: string }
+                answer: { type: string, description: Choice key such as A, B, C, or D }
+      responses:
+        '200':
+          description: Result and short explanation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  questionId: { type: string }
+                  correct: { type: boolean }
+                  selectedAnswer: { type: string }
+                  correctAnswer: { type: string }
+                  explanation: { type: string }
+  /api/premium/solution:
+    post:
+      operationId: getPremiumSolution
+      summary: Gate a worked solution and return the sandbox checkout link
+      description: Defaults to Free. Use premium_test only for an explicit simulation request; it does not verify or process payment.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                questionId: { type: string, default: ce-statics-beam-001 }
+                mode:
+                  type: string
+                  enum: [free, premium_test]
+                  default: free
+      responses:
+        '200':
+          description: Either an upgrade gate with checkout URL or a simulated test solution
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  allowed: { type: boolean }
+                  status: { type: string }
+                  plan: { type: string }
+                  feature: { type: string }
+                  message: { type: string }
+                  price:
+                    type: object
+                    properties:
+                      amountMinor: { type: integer }
+                      currency: { type: string }
+                  checkoutUrl: { type: string, nullable: true }
+                  paymentVerified: { type: boolean }
+                  simulated: { type: boolean }
+                  questionId: { type: string }
+                  workedSolution: { type: string }
